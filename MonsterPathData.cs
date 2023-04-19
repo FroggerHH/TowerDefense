@@ -60,7 +60,7 @@ internal class MonsterPathData
 
     internal bool GoToNode(float dt)
     {
-        if (monsterAI.FindEnemy()) return false;
+        if (monsterAI.FindEnemy()) return true;
         else
         {
             monsterAI.m_targetCreature = null;
@@ -82,7 +82,7 @@ internal class MonsterPathData
                 }
             });
 
-            return AttackTargetPiece();
+            return AttackTargetPiece(dt);
         }
 
         // if (monsterAI.m_character.GetMoveDir() == Vector3.zero &&
@@ -99,30 +99,39 @@ internal class MonsterPathData
         // }
         //}
 
-        if (!monsterAI.MoveTo(dt, node, 0, true))
+        if (monsterAI.MoveTo(dt, node, 1f, true))
         {
             monsterAI.m_targetStatic = monsterAI.FindClosestStaticPriorityTarget();
-            return AttackTargetPiece();
+            if (monsterAI.m_targetStatic)
+            {
+                return AttackTargetPiece(dt);
+            }
         }
         else
         {
             monsterAI.m_targetStatic = null;
         }
 
-        return true;
+        return false;
     }
 
-    private bool AttackTargetPiece()
+    private bool AttackTargetPiece(float dt)
     {
-        //bool flag = monsterAI.m_targetStatic;
-        //if (!flag) return false;
-        // monsterAI.LookAt(monsterAI.m_targetStatic.GetCenter());
-        // if (monsterAI.IsLookingAt(monsterAI.m_targetStatic.GetCenter(), 0))
-        // {
-        //     if (monsterAI.m_aiStatus != null)
-        //         monsterAI.m_aiStatus = "Attacking piece";
-        //     monsterAI.DoAttack(null, false);
-        // }
+        bool flag = monsterAI.m_targetStatic;
+        if (!flag) return true;
+        monsterAI.LookAt(monsterAI.m_targetStatic.GetCenter());
+        if (monsterAI.IsLookingAt(monsterAI.m_targetStatic.GetCenter(), monsterAI.SelectBestAttack(monsterAI.m_character as Humanoid, dt).m_shared.m_aiAttackMaxAngle))
+        {
+            if (monsterAI.m_aiStatus != null)
+                monsterAI.m_aiStatus = "Attacking piece";
+            monsterAI.DoAttack(null, false);
+            return false;
+        }
+        else
+        {
+            Vector3 closestPoint = monsterAI.m_targetStatic.FindClosestPoint(monsterAI.transform.position);
+            return monsterAI.MoveTo(dt, closestPoint, 0, true);
+        }
 
         return true;
     }

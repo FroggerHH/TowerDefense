@@ -189,9 +189,9 @@ namespace TowerDefense
             return null;
         }
 
-        internal static void MoveMonsterAlongPath(MonsterAI monster, float dt)
+        internal static bool MoveMonsterAlongPath(MonsterAI monster, float dt)
         {
-            MonsterPathDatas[monster].GoToNode(dt);
+            return MonsterPathDatas[monster].GoToNode(dt);
         }
 
         internal static void RegisterMonster(BaseAI __instance)

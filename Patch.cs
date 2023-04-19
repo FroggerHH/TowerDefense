@@ -66,15 +66,17 @@ namespace TowerDefense
         }
 
         [HarmonyPatch(typeof(MonsterAI), nameof(MonsterAI.UpdateAI)), HarmonyPrefix]
-        internal static void MonsterAIUpdateAI(MonsterAI __instance, float dt)
+        internal static bool MonsterAIUpdateAI(MonsterAI __instance, float dt)
         {
-            if (!__instance || !__instance.m_character) return;
+            if (!__instance || !__instance.m_character) return true;
 
             if (WayPointsSys.MonsterPathDatas.ContainsKey(__instance))
             {
                 WayPointsSys.RefreshAllMonstersDic();
-                WayPointsSys.MoveMonsterAlongPath(__instance, dt);
+                return WayPointsSys.MoveMonsterAlongPath(__instance, dt);
             }
+            
+            return true;
         }
 
         [HarmonyPatch(typeof(CharacterDrop), nameof(CharacterDrop.OnDeath)), HarmonyPrefix]
