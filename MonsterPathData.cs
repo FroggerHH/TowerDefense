@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using UnityEngine;
 using Random = UnityEngine.Random;
 using static TowerDefense.Plugin;
@@ -70,9 +71,9 @@ internal class MonsterPathData
         TryGoToNext();
 
         var node = CurrentNode();
-        if (OnPathEnd())
+        if (OnPathEnd() && (!monsterAI.m_targetStatic || !monsterAI.m_targetStatic.name.Contains("DestroyMe")))
         {
-            var colliders = Physics.OverlapSphere(monsterAI.transform.position, 35f).ToList();
+            var colliders = Physics.OverlapSphere(monsterAI.transform.position, 30).ToList();
             colliders.ForEach(c =>
             {
                 var piece = c.GetComponentInParent<Piece>();
@@ -103,6 +104,7 @@ internal class MonsterPathData
         {
             monsterAI.m_targetStatic = monsterAI.FindClosestStaticPriorityTarget();
             if (monsterAI.m_targetStatic)
+
             {
                 return AttackTargetPiece(dt);
             }
@@ -136,7 +138,8 @@ internal class MonsterPathData
         }
         else
         {
-            return monsterAI.MoveTo(dt, closestPoint, 0, true);
+            monsterAI.MoveTo(dt, closestPoint, 0, true);
+            return false;
         }
 
         return true;

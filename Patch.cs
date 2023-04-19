@@ -79,17 +79,14 @@ namespace TowerDefense
             return true;
         }
 
-        [HarmonyPatch(typeof(CharacterDrop), nameof(CharacterDrop.OnDeath)), HarmonyPrefix]
-        internal static bool MonsterOnDeath(CharacterDrop __instance)
+        [HarmonyPatch(typeof(Character), nameof(Character.OnDeath)), HarmonyPrefix]
+        internal static void MonsterOnDeath(Character __instance)
         {
-            if (!__instance || !__instance.m_character ||
-                __instance.m_character.m_baseAI is not MonsterAI monsterAI) return true;
+            if (!__instance || !__instance.m_baseAI ||
+                __instance.m_baseAI is not MonsterAI monsterAI) return;
 
-            if (WayPointsSys.IsPathMonster(monsterAI, out MonsterPathData _) && noLoot)
-            {
-                return false;
-            }
-            return true; 
+            //WayPointsSys.IsPathMonster(monsterAI, out MonsterPathData _) && 
+            __instance.GetComponent<CharacterDrop>().m_drops.ForEach(x => x.m_prefab = null);
         }
 
         [HarmonyPatch(typeof(WearNTear), nameof(WearNTear.Destroy), new Type[0]), HarmonyPostfix]
@@ -184,7 +181,12 @@ namespace TowerDefense
         {
             if (SceneManager.GetActiveScene().name != "main") return;
 
-            if(__instance.m_name.ToLower().Contains("gate")) __result = true;
+            if (__instance.m_name.ToLower().Contains("gate"))
+            {
+                __result = true;
+                return;
+            }
+            if(__instance.gameObject.GetComponent<Door>()) __result = true;
         }
     }
 }

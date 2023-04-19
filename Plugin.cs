@@ -92,6 +92,8 @@ namespace TowerDefense
 
             Config.SaveOnConfigSet = false;
 
+            _ = configSync.AddLockingConfigEntry(config("General", "Lock Configuration", true, ""));
+            
             lineShowModeConfig = config("General", "Line Show Mode", LineShowMode.Admin_WhenWandInHands,
                 "0-EveryOne\n1-Admin\n2-Nobody\n3-Admin_WhenWandInHands\n4-EveryOne_WhenWandInHands");
             //lineColorConfig = config("General", "Line Color", Color.green, "");
