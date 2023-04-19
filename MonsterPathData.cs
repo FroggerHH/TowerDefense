@@ -67,6 +67,8 @@ internal class MonsterPathData
             monsterAI.SetAlerted(false);
         }
 
+        TryGoToNext();
+
         var node = CurrentNode();
         if (OnPathEnd())
         {
@@ -79,44 +81,48 @@ internal class MonsterPathData
                     monsterAI.m_targetStatic = piece;
                 }
             });
-            
+
             return AttackTargetPiece();
         }
 
-        monsterAI.m_targetStatic = null;
-        TryGoToNext();
-        if (monsterAI.m_character.GetMoveDir() == Vector3.zero &&
-            CurrentNode() != path.First())
+        // if (monsterAI.m_character.GetMoveDir() == Vector3.zero &&
+        //     CurrentNode() != path.First())
+        //{
+        // var destructible = GetMonsterLookingDestructible(monsterAI, out GameObject gameObject);
+        // if (destructible == null) destructible = GetDestructibleArountMonster(monsterAI, out gameObject);
+        // monsterAI.LookAt(gameObject.transform.position);
+        // monsterAI.DoAttack(null, false);
+        // if (destructible != null)
+        // {
+        //     monsterAI.LookAt(gameObject.transform.position);
+        //     monsterAI.DoAttack(null, false);
+        // }
+        //}
+
+        if (!monsterAI.MoveTo(dt, node, 0, true))
         {
             monsterAI.m_targetStatic = monsterAI.FindClosestStaticPriorityTarget();
             return AttackTargetPiece();
-            // var destructible = GetMonsterLookingDestructible(monsterAI, out GameObject gameObject);
-            // if (destructible == null) destructible = GetDestructibleArountMonster(monsterAI, out gameObject);
-            // monsterAI.LookAt(gameObject.transform.position);
-            // monsterAI.DoAttack(null, false);
-            // if (destructible != null)
-            // {
-            //     monsterAI.LookAt(gameObject.transform.position);
-            //     monsterAI.DoAttack(null, false);
-            // }
         }
-
-        monsterAI.MoveTo(dt, node, 0, true);
+        else
+        {
+            monsterAI.m_targetStatic = null;
+        }
 
         return true;
     }
 
     private bool AttackTargetPiece()
     {
-        bool flag = monsterAI.m_targetStatic;
-        if (!flag) return false;
-        monsterAI.LookAt(monsterAI.m_targetStatic.GetCenter());
-        if (monsterAI.IsLookingAt(monsterAI.m_targetStatic.GetCenter(), 0))
-        {
-            if (monsterAI.m_aiStatus != null)
-                monsterAI.m_aiStatus = "Attacking piece";
-            monsterAI.DoAttack(null, false);
-        }
+        //bool flag = monsterAI.m_targetStatic;
+        //if (!flag) return false;
+        // monsterAI.LookAt(monsterAI.m_targetStatic.GetCenter());
+        // if (monsterAI.IsLookingAt(monsterAI.m_targetStatic.GetCenter(), 0))
+        // {
+        //     if (monsterAI.m_aiStatus != null)
+        //         monsterAI.m_aiStatus = "Attacking piece";
+        //     monsterAI.DoAttack(null, false);
+        // }
 
         return true;
     }

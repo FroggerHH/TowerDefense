@@ -78,15 +78,16 @@ namespace TowerDefense
         }
 
         [HarmonyPatch(typeof(CharacterDrop), nameof(CharacterDrop.OnDeath)), HarmonyPrefix]
-        internal static void MonsterOnDeath(CharacterDrop __instance)
+        internal static bool MonsterOnDeath(CharacterDrop __instance)
         {
             if (!__instance || !__instance.m_character ||
-                __instance.m_character.m_baseAI is not MonsterAI monsterAI) return;
+                __instance.m_character.m_baseAI is not MonsterAI monsterAI) return true;
 
             if (WayPointsSys.IsPathMonster(monsterAI, out MonsterPathData _) && noLoot)
             {
-                __instance.m_drops = new();
+                return false;
             }
+            return true; 
         }
 
         [HarmonyPatch(typeof(WearNTear), nameof(WearNTear.Destroy), new Type[0]), HarmonyPostfix]
