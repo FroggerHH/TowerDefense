@@ -119,17 +119,23 @@ internal class MonsterPathData
     {
         bool flag = monsterAI.m_targetStatic;
         if (!flag) return true;
+        Vector3 closestPoint = monsterAI.m_targetStatic.FindClosestPoint(monsterAI.transform.position);
         monsterAI.LookAt(monsterAI.m_targetStatic.GetCenter());
-        if (monsterAI.IsLookingAt(monsterAI.m_targetStatic.GetCenter(), monsterAI.SelectBestAttack(monsterAI.m_character as Humanoid, dt).m_shared.m_aiAttackMaxAngle))
+
+        var itemData = monsterAI.SelectBestAttack(monsterAI.m_character as Humanoid, dt);
+        if (Vector3.Distance(closestPoint, monsterAI.transform.position) < (double)itemData.m_shared.m_aiAttackRange &&
+            monsterAI.CanSeeTarget(monsterAI.m_targetStatic))
         {
-            if (monsterAI.m_aiStatus != null)
-                monsterAI.m_aiStatus = "Attacking piece";
-            monsterAI.DoAttack(null, false);
-            return false;
+            if (monsterAI.IsLookingAt(monsterAI.m_targetStatic.GetCenter(), 0))
+            {
+                if (monsterAI.m_aiStatus != null)
+                    monsterAI.m_aiStatus = "Attacking piece";
+                monsterAI.DoAttack(null, false);
+                return false;
+            }
         }
         else
         {
-            Vector3 closestPoint = monsterAI.m_targetStatic.FindClosestPoint(monsterAI.transform.position);
             return monsterAI.MoveTo(dt, closestPoint, 0, true);
         }
 

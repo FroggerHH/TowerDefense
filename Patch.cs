@@ -178,5 +178,13 @@ namespace TowerDefense
             ZRoutedRpc.instance.Register(nameof(WayPointsSys.SyncPathsWithOtherPlayers),
                 new Action<long>(WayPointsSys.RPC_SyncPathsWithOtherPlayers));
         }
+
+        [HarmonyPatch(typeof(Piece), nameof(Piece.IsPriorityTarget)), HarmonyPostfix]
+        private static void GateIsPriorityTarget(Piece __instance, ref bool __result)
+        {
+            if (SceneManager.GetActiveScene().name != "main") return;
+
+            if(__instance.m_name.ToLower().Contains("gate")) __result = true;
+        }
     }
 }
