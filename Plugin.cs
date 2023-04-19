@@ -17,7 +17,7 @@ namespace TowerDefense
     {
         #region values
 
-        internal const string ModName = "TowerDefense", ModVersion = "1.0.2", ModGUID = "com.Frogger." + ModName;
+        internal const string ModName = "TowerDefense", ModVersion = "1.0.3", ModGUID = "com.Frogger." + ModName;
         private static readonly Harmony harmony = new(ModGUID);
         public static Plugin _self;
         internal BuildPiece piece;
@@ -66,7 +66,9 @@ namespace TowerDefense
         #region values
 
         internal static ConfigEntry<LineShowMode> lineShowModeConfig;
+
         internal static LineShowMode lineShowMode;
+
         //internal static ConfigEntry<Color> lineColorConfig;
         //internal static Color lineColor;
         internal static ConfigEntry<float> minDistanceBetweenPointsConfig;
@@ -75,6 +77,10 @@ namespace TowerDefense
         internal static float upModifier;
         internal static ConfigEntry<KeyCode> undoKeyConfig;
         internal static KeyCode undoKey;
+        internal static ConfigEntry<string> onDestroyMessageConfig;
+        internal static string onDestroyMessage;
+        internal static ConfigEntry<bool> noLootConfig;
+        internal static bool noLoot;
 
         #endregion
 
@@ -92,6 +98,8 @@ namespace TowerDefense
             minDistanceBetweenPointsConfig = config("General", "Min Distance Between Points", 3.85f, "");
             upModifierConfig = config("General", "UpModifier", 0.6f, "");
             undoKeyConfig = config("General", "Undo Key", KeyCode.U, "Works only when wand is equipped");
+            onDestroyMessageConfig = config("General", "onDestroy Cristal Message", "You lost bitch", "");
+            noLootConfig = config("General", "Should path monsters dont drop loot when they die", false, "");
 
             SetupWatcherOnConfigFile();
             Config.ConfigReloaded += (_, _) => { UpdateConfiguration(); };
@@ -113,6 +121,22 @@ namespace TowerDefense
             wand.RequiredItems.Add("SwordCheat", 1);
             wand.Crafting.Add(ItemManager.CraftingTable.Workbench, 10);
             MaterialReplacer.RegisterGameObjectForShaderSwap(wand.Prefab, MaterialReplacer.ShaderType.UseUnityShader);
+
+            #endregion
+
+            #region DestroyMe
+
+            piece = new(bundle, "JF_DestroyMe");
+            piece.Name
+                .English("Destroy Me");
+            piece.Description
+                .English("Break me completely, sweet monster")
+                .Russian("Сломай меня полностью, сладкий монстер");
+            piece.Crafting.Set(PieceManager.CraftingTable.Workbench);
+            piece.Category.Add(PieceManager.BuildPieceCategory.Misc);
+            piece.SpecialProperties.AdminOnly = true;
+            piece.RequiredItems.Add("SwordCheat", 1, false);
+            MaterialReplacer.RegisterGameObjectForShaderSwap(piece.Prefab, MaterialReplacer.ShaderType.UseUnityShader);
 
             #endregion
 
@@ -195,6 +219,8 @@ namespace TowerDefense
             minDistanceBetweenPoints = minDistanceBetweenPointsConfig.Value;
             upModifier = upModifierConfig.Value;
             undoKey = undoKeyConfig.Value;
+            onDestroyMessage = onDestroyMessageConfig.Value;
+            noLoot = noLootConfig.Value;
             WayPointsSys.UpdateLines();
             Debug("Configuration Received");
         }

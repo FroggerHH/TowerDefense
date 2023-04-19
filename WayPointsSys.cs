@@ -88,11 +88,13 @@ namespace TowerDefense
                 {
                     m_localPlayer.Message(MessageHud.MessageType.TopLeft, "Line visul loacaly deactivated");
                     currentLineRenderer.enabled = false;
+                    currentSpawner.m_nview.GetZDO().Set("enabledLineRenderer", false);
                 }
                 else
                 {
                     m_localPlayer.Message(MessageHud.MessageType.TopLeft, "Line visul loacaly activated");
                     currentLineRenderer.enabled = true;
+                    currentSpawner.m_nview.GetZDO().Set("enabledLineRenderer", true);
                 }
 
                 return false;
@@ -267,7 +269,7 @@ namespace TowerDefense
 
             m_localPlayer.Message(MessageHud.MessageType.TopLeft, $"A spawner of {names} has been found");
             spawnArea.m_spawnRadius = 0;
-            spawnArea.GetComponentsInChildren<Collider>().ToList().ForEach(x => x.enabled = false);
+            //spawnArea.GetComponentsInChildren<Collider>().ToList().ForEach(x => x.enabled = false);
             spawnArea.m_setPatrolSpawnPoint = true;
 
             spawner = spawnArea;
@@ -492,6 +494,7 @@ namespace TowerDefense
                             var loadColor = LoadColor(x);
                             line.startColor = loadColor;
                             line.endColor = loadColor;
+                            if(!x.m_nview.GetZDO().GetBool("enabledLineRenderer", true)) return;
                             switch (lineShowMode)
                             {
                                 case LineShowMode.Admin:

@@ -77,6 +77,27 @@ namespace TowerDefense
             }
         }
 
+        [HarmonyPatch(typeof(CharacterDrop), nameof(CharacterDrop.OnDeath)), HarmonyPrefix]
+        internal static void MonsterOnDeath(CharacterDrop __instance)
+        {
+            if (!__instance || !__instance.m_character ||
+                __instance.m_character.m_baseAI is not MonsterAI monsterAI) return;
+
+            if (WayPointsSys.IsPathMonster(monsterAI, out MonsterPathData _) && noLoot)
+            {
+                __instance.m_drops = new();
+            }
+        }
+
+        [HarmonyPatch(typeof(WearNTear), nameof(WearNTear.Destroy), new Type[0]), HarmonyPostfix]
+        internal static void PieceOnDestroy(WearNTear __instance)
+        {
+            if (!__instance || __instance.m_piece.m_name != CONST.PIECE_NAME) return;
+            if (__instance.m_nview.m_ghost) return;
+
+            MessageHud.instance.MessageAll(MessageHud.MessageType.Center, onDestroyMessage);
+        }
+
         [HarmonyPatch(typeof(Attack), nameof(Attack.Start)), HarmonyPrefix]
         private static bool PreventAnimation(Humanoid character, ItemDrop.ItemData weapon)
         {
@@ -141,7 +162,7 @@ namespace TowerDefense
                 WayPointsSys.CreateLineRenderer(__instance, vector3s);
                 WayPointsSys.AllSpawners.Add(__instance);
                 __instance.m_spawnRadius = 0;
-                __instance.GetComponentsInChildren<Collider>().ToList().ForEach(x => x.enabled = false);
+                // __instance.GetComponentsInChildren<Collider>().ToList().ForEach(x => x.enabled = false);
                 __instance.m_setPatrolSpawnPoint = true;
             }
         }

@@ -68,22 +68,55 @@ internal class MonsterPathData
         }
 
         var node = CurrentNode();
-        if (OnPathEnd()) return false;
-        TryGoToNext();
-        if (monsterAI.m_character.GetMoveDir() == Vector3.zero /*&& !monsterAI.FoundPath()*/ && !OnPathEnd() && monsterAI.transform.position != path.First())
+        if (OnPathEnd())
         {
-            var destructible = GetMonsterLookingDestructible(monsterAI, out GameObject gameObject);
-            if (destructible == null) destructible = GetDestructibleArountMonster(monsterAI, out gameObject);
-            monsterAI.LookAt(gameObject.transform.position);
-            monsterAI.DoAttack(null, false);
-            if (destructible != null)
+            var colliders = Physics.OverlapSphere(monsterAI.transform.position, 35f).ToList();
+            colliders.ForEach(c =>
             {
-                monsterAI.LookAt(gameObject.transform.position);
-                monsterAI.DoAttack(null, false);
-            }
+                var piece = c.GetComponentInParent<Piece>();
+                if (piece && piece.m_name == CONST.PIECE_NAME)
+                {
+                    monsterAI.m_targetStatic = piece;
+                }
+            });
+            
+            return AttackTargetPiece();
+        }
+
+        monsterAI.m_targetStatic = null;
+        TryGoToNext();
+        if (monsterAI.m_character.GetMoveDir() == Vector3.zero &&
+            CurrentNode() != path.First())
+        {
+            monsterAI.m_targetStatic = monsterAI.FindClosestStaticPriorityTarget();
+            return AttackTargetPiece();
+            // var destructible = GetMonsterLookingDestructible(monsterAI, out GameObject gameObject);
+            // if (destructible == null) destructible = GetDestructibleArountMonster(monsterAI, out gameObject);
+            // monsterAI.LookAt(gameObject.transform.position);
+            // monsterAI.DoAttack(null, false);
+            // if (destructible != null)
+            // {
+            //     monsterAI.LookAt(gameObject.transform.position);
+            //     monsterAI.DoAttack(null, false);
+            // }
         }
 
         monsterAI.MoveTo(dt, node, 0, true);
+
+        return true;
+    }
+
+    private bool AttackTargetPiece()
+    {
+        bool flag = monsterAI.m_targetStatic;
+        if (!flag) return false;
+        monsterAI.LookAt(monsterAI.m_targetStatic.GetCenter());
+        if (monsterAI.IsLookingAt(monsterAI.m_targetStatic.GetCenter(), 0))
+        {
+            if (monsterAI.m_aiStatus != null)
+                monsterAI.m_aiStatus = "Attacking piece";
+            monsterAI.DoAttack(null, false);
+        }
 
         return true;
     }

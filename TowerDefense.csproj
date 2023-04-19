@@ -59,16 +59,16 @@
         <HintPath>..\..\..\Steam\steamapps\common\Valheim\BepInEx\core\0Harmony.dll</HintPath>
       </Reference>
       <Reference Include="assembly_guiutils">
-        <HintPath>..\publicized_assemblies\assembly_guiutils_publicized.dll</HintPath>
+        <HintPath>..\Utils\assembly_guiutils_publicized.dll</HintPath>
       </Reference>
       <Reference Include="assembly_lux">
-        <HintPath>..\publicized_assemblies\assembly_lux_publicized.dll</HintPath>
+        <HintPath>..\Utils\assembly_lux_publicized.dll</HintPath>
       </Reference>
       <Reference Include="assembly_utils">
-        <HintPath>..\publicized_assemblies\assembly_utils_publicized.dll</HintPath>
+        <HintPath>..\Utils\assembly_utils_publicized.dll</HintPath>
       </Reference>
       <Reference Include="assembly_valheim">
-        <HintPath>..\publicized_assemblies\assembly_valheim_publicized.dll</HintPath>
+        <HintPath>..\Utils\assembly_valheim_publicized.dll</HintPath>
       </Reference>
       <Reference Include="BepInEx">
         <HintPath>..\..\..\Steam\steamapps\common\Valheim\BepInEx\core\BepInEx.dll</HintPath>
