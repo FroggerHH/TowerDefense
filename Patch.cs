@@ -85,7 +85,7 @@ namespace TowerDefense
             if (!__instance || !__instance.m_baseAI ||
                 __instance.m_baseAI is not MonsterAI monsterAI) return;
 
-            //WayPointsSys.IsPathMonster(monsterAI, out MonsterPathData _) && 
+            if(!WayPointsSys.IsPathMonster(monsterAI, out MonsterPathData _) || !noLoot) return; 
             __instance.GetComponent<CharacterDrop>().m_drops.ForEach(x => x.m_prefab = null);
         }
 
