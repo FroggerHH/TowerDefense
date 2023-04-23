@@ -19,6 +19,7 @@ namespace TowerDefense
     internal class WayPointsSys
     {
         internal static List<SpawnArea> AllSpawners = new();
+        internal static List<LineRenderer> AllLineRenderers = new();
         internal static Dictionary<MonsterAI, MonsterPathData> MonsterPathDatas = new();
 
         private static SpawnArea currentSpawner;
@@ -82,7 +83,7 @@ namespace TowerDefense
             Heightlight(newSA.gameObject);
             if (!AllSpawners.Contains(newSA)) AllSpawners.Add(currentSpawner);
 
-            if (newSA == currentSpawner)
+            /*if (newSA == currentSpawner)
             {
                 if (currentLineRenderer.enabled)
                 {
@@ -98,10 +99,10 @@ namespace TowerDefense
                 }
 
                 return false;
-            }
+            }*/
 
             currentSpawner = newSA;
-            currentLineRenderer.enabled = true;
+            //currentLineRenderer.enabled = true;
 
             return true;
         }
@@ -109,6 +110,7 @@ namespace TowerDefense
         private static bool CreateWayPoint()
         {
             if (!currentSpawner) return false;
+            if (!currentLineRenderer) return false;
             if (currentPath == null)
             {
                 currentPath = new();
@@ -123,7 +125,7 @@ namespace TowerDefense
                     float dist = Vector3.Distance(currentPath[currentPath.Count - 1], point);
                     if (dist < minDistanceBetweenPoints)
                     {
-                        m_localPlayer.Message(MessageHud.MessageType.TopLeft, "The previous point is too close");
+                        m_localPlayer?.Message(MessageHud.MessageType.TopLeft, "The previous point is too close");
                         return false;
                     }
                 }
@@ -135,8 +137,6 @@ namespace TowerDefense
             }
 
             SaveSpawnerData();
-
-            //m_localPlayer.Message(MessageHud.MessageType.TopLeft, "CreateWayPoint");
             return true;
         }
 
@@ -364,6 +364,8 @@ namespace TowerDefense
 
                 lineRenderer.SetPosition(lineRenderer.positionCount - 1, path[path.Count - 1]);
             }
+
+            if (!AllLineRenderers.Contains(lineRenderer)) AllLineRenderers.Add(lineRenderer);
         }
 
         internal static void RefreshAllSpawnersList()
@@ -371,10 +373,23 @@ namespace TowerDefense
             List<SpawnArea> returnList = new();
             AllSpawners.ForEach(x =>
             {
-                if (x != null) returnList.Add(x);
+                if (x != null && !returnList.Contains(x)) returnList.Add(x);
             });
             AllSpawners = returnList;
+
+            RefreshAllLineRenderersList();
         }
+
+        internal static void RefreshAllLineRenderersList()
+        {
+            List<LineRenderer> returnList = new();
+            AllLineRenderers.ForEach(x =>
+            {
+                if (x != null && !returnList.Contains(x)) returnList.Add(x);
+            });
+            AllLineRenderers = returnList;
+        }
+
 
         private static void FillAllSpawnersList()
         {
@@ -479,50 +494,48 @@ namespace TowerDefense
 
         public static void UpdateLines()
         {
-            Task task = null;
-
-
-            task = Task.Run(() =>
+            Task.Run(() =>
             {
-                AllSpawners.ForEach(x =>
+                try
                 {
-                    if (x.m_nview.GetZDO().GetString(ZDO_PATH, "") != "")
+                    foreach (LineRenderer line in AllLineRenderers)
                     {
-                        AllSpawners.Add(x);
-                        LineRenderer line = x.GetComponentInChildren<LineRenderer>();
+                        var loadColor = LoadColor(line.GetComponentInParent<SpawnArea>());
+                        line.startColor = loadColor;
+                        line.endColor = loadColor;
+                        //if(!x.m_nview.GetZDO().GetBool("enabledLineRenderer", true)) return;
+                        switch (lineShowMode)
                         {
-                            var loadColor = LoadColor(x);
-                            line.startColor = loadColor;
-                            line.endColor = loadColor;
-                            if(!x.m_nview.GetZDO().GetBool("enabledLineRenderer", true)) return;
-                            switch (lineShowMode)
-                            {
-                                case LineShowMode.Admin:
-                                    line.enabled = configSync.IsAdmin || ZNet.m_isServer;
+                            case LineShowMode.Admin:
+                                line.enabled = configSync.IsAdmin || ZNet.m_isServer;
+                                break;
+                            case LineShowMode.Nobody:
+                                line.enabled = false;
+                                break;
+                            case LineShowMode.EveryOne:
+                                line.enabled = true;
+                                break;
+                            case LineShowMode.Admin_WhenWandInHands:
+                                if (configSync.IsAdmin || ZNet.m_isServer)
+                                {
+                                    ShowpointsIfWandInHands(line);
                                     break;
-                                case LineShowMode.Nobody:
-                                    line.enabled = false;
-                                    break;
-                                case LineShowMode.EveryOne:
-                                    line.enabled = true;
-                                    break;
-                                case LineShowMode.Admin_WhenWandInHands:
-                                    if (!configSync.IsAdmin && !ZNet.m_isServer)
-                                    {
-                                        line.enabled = false;
-                                        break;
-                                    }
+                                }
+                                else line.enabled = false;
 
-                                    ShowpointsIfWandInHands(line);
-                                    break;
-                                case LineShowMode.EveryOne_WhenWandInHands:
-                                    ShowpointsIfWandInHands(line);
-                                    break;
-                            }
+                                break;
+                            case LineShowMode.EveryOne_WhenWandInHands:
+                                ShowpointsIfWandInHands(line);
+                                break;
                         }
                     }
-                });
+                }
+                catch (Exception e)
+                {
+                    Debug(e.Message);
+                }
             });
+
 
             Task.WaitAll();
         }

@@ -160,7 +160,7 @@ namespace TowerDefense
             if (vector3s != null && vector3s.Count > 0)
             {
                 WayPointsSys.CreateLineRenderer(__instance, vector3s);
-                WayPointsSys.AllSpawners.Add(__instance);
+                if (!WayPointsSys.AllSpawners.Contains(__instance)) WayPointsSys.AllSpawners.Add(__instance);
                 __instance.m_spawnRadius = 0;
                 // __instance.GetComponentsInChildren<Collider>().ToList().ForEach(x => x.enabled = false);
                 __instance.m_setPatrolSpawnPoint = true;

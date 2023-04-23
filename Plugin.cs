@@ -164,11 +164,11 @@ namespace TowerDefense
             Logger.LogError($"{msg} Write to the developer and moderator if this happens often.");
         }
 
-        public static Collider Nearest(GameObject to, List<Collider> list)
+        public static Piece Nearest(GameObject to, List<Piece> list)
         {
-            Collider current = null;
+            Piece current = null;
             float oldDistance = 9999;
-            foreach (Collider o in list)
+            foreach (Piece o in list)
             {
                 if (!o) continue;
                 float dist = Vector3.Distance(to.transform.position, o.transform.position);

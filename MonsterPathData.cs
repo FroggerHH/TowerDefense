@@ -70,6 +70,7 @@ internal class MonsterPathData
 
         TryGoToNext();
 
+        List<Piece> pieces = new List<Piece>();
         var node = CurrentNode();
         if (OnPathEnd() && (!monsterAI.m_targetStatic || !monsterAI.m_targetStatic.name.Contains("DestroyMe")))
         {
@@ -79,9 +80,11 @@ internal class MonsterPathData
                 var piece = c.GetComponentInParent<Piece>();
                 if (piece && piece.m_name == CONST.PIECE_NAME)
                 {
-                    monsterAI.m_targetStatic = piece;
+                    pieces.Add(piece);
                 }
             });
+
+            monsterAI.m_targetStatic = Nearest(Player.m_localPlayer.gameObject, pieces);
 
             return AttackTargetPiece(dt);
         }
@@ -119,8 +122,7 @@ internal class MonsterPathData
 
     private bool AttackTargetPiece(float dt)
     {
-        bool flag = monsterAI.m_targetStatic;
-        if (!flag) return true;
+        if (!monsterAI.m_targetStatic || !monsterAI) return true;
         Vector3 closestPoint = monsterAI.m_targetStatic.FindClosestPoint(monsterAI.transform.position);
         monsterAI.LookAt(monsterAI.m_targetStatic.GetCenter());
 
@@ -144,38 +146,6 @@ internal class MonsterPathData
 
         return true;
     }
-
-    private IDestructible GetMonsterLookingDestructible(MonsterAI monsterAI, out GameObject @object)
-    {
-        @object = null;
-        Vector3 centerPoint = monsterAI.m_character.GetCenterPoint();
-        Vector3 right = monsterAI.transform.right;
-        if (Physics.Raycast(centerPoint, monsterAI.m_character.m_lookDir, out RaycastHit hitInfo, distance))
-        {
-            var monsterLookingDestructible = hitInfo.collider.GetComponentInParent<IDestructible>();
-            @object = hitInfo.collider.gameObject;
-            return monsterLookingDestructible;
-        }
-        else
-            return null;
-    }
-
-    private IDestructible GetDestructibleArountMonster(MonsterAI monsterAI, out GameObject @object)
-    {
-        @object = null;
-        Vector3 centerPoint = monsterAI.m_character.GetCenterPoint();
-        Vector3 right = monsterAI.transform.right;
-        var colliders = Physics.OverlapSphere(centerPoint, this.monsterAI.m_character.m_collider.radius + 0.2f)
-            ?.ToList();
-        if (colliders != null && colliders.Count > 0)
-        {
-            @object = Nearest(this.monsterAI.gameObject, colliders)?.gameObject;
-            return @object?.GetComponentInParent<IDestructible>();
-        }
-        else
-            return null;
-    }
-
 
     public void UpdatePath()
     {
