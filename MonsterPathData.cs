@@ -16,11 +16,12 @@ internal class MonsterPathData
     internal int currentNodeIndex = 0;
     internal int nextNodeIndex => currentNodeIndex + 1;
     internal Vector3 pos => monsterAI.transform.position;
+    internal bool inMove =false;
 
     public MonsterPathData(MonsterAI monsterAI, SpawnArea spawnArea)
     {
         this.monsterAI = monsterAI;
-        this.path = WayPointsSys.GetSpawnerPath(spawnArea);
+        this.path = WayPointsSys.GetSpawnerPath(spawnArea).ToList();
         this.spawnArea = spawnArea;
 
         SetCurrentNode(0);
@@ -61,10 +62,11 @@ internal class MonsterPathData
 
     internal bool GoToNode(float dt)
     {
-        if (monsterAI.FindEnemy()) return true;
+        if (monsterAI.FindEnemy()) return false;
         else
         {
             monsterAI.m_targetCreature = null;
+            monsterAI.m_targetStatic = null;
             monsterAI.SetAlerted(false);
         }
 
@@ -72,7 +74,25 @@ internal class MonsterPathData
 
         List<Piece> pieces = new List<Piece>();
         var node = CurrentNode();
-        if (OnPathEnd() && (!monsterAI.m_targetStatic || !monsterAI.m_targetStatic.name.Contains("DestroyMe")))
+        var onPathEnd = OnPathEnd();
+        if (onPathEnd is false)
+        {
+            Debug("onPathEnd false");
+            var moveTo = monsterAI.MoveTo(dt, node, 1f, true);
+            Debug($"moveTo result is {moveTo}");
+            if (moveTo)
+            {
+                monsterAI.m_targetStatic = monsterAI.FindClosestStaticPriorityTarget();
+                Debug("Finding closest target");
+
+                if (monsterAI.m_targetStatic) return AttackTargetPiece(dt); 
+                return true;
+            }
+
+            monsterAI.m_targetStatic = null;
+            return true;
+        }
+        if (!monsterAI.m_targetStatic || !monsterAI.m_targetStatic.IsPriorityTarget())
         {
             var colliders = Physics.OverlapSphere(monsterAI.transform.position, 30).ToList();
             colliders.ForEach(c =>
@@ -84,45 +104,18 @@ internal class MonsterPathData
                 }
             });
 
-            monsterAI.m_targetStatic = Nearest(Player.m_localPlayer.gameObject, pieces);
-
-            return AttackTargetPiece(dt);
+            monsterAI.m_targetStatic = Nearest(monsterAI.transform.position, pieces);
+            monsterAI.StopMoving();
+            return false;
         }
-
-        // if (monsterAI.m_character.GetMoveDir() == Vector3.zero &&
-        //     CurrentNode() != path.First())
-        //{
-        // var destructible = GetMonsterLookingDestructible(monsterAI, out GameObject gameObject);
-        // if (destructible == null) destructible = GetDestructibleArountMonster(monsterAI, out gameObject);
-        // monsterAI.LookAt(gameObject.transform.position);
-        // monsterAI.DoAttack(null, false);
-        // if (destructible != null)
-        // {
-        //     monsterAI.LookAt(gameObject.transform.position);
-        //     monsterAI.DoAttack(null, false);
-        // }
-        //}
-
-        if (monsterAI.MoveTo(dt, node, 1f, true))
-        {
-            monsterAI.m_targetStatic = monsterAI.FindClosestStaticPriorityTarget();
-            if (monsterAI.m_targetStatic)
-
-            {
-                return AttackTargetPiece(dt);
-            }
-        }
-        else
-        {
-            monsterAI.m_targetStatic = null;
-        }
-
-        return false;
+        
+        return AttackTargetPiece(dt);
     }
 
     private bool AttackTargetPiece(float dt)
     {
-        if (!monsterAI.m_targetStatic || !monsterAI) return true;
+        Debug("AttackTargetPiece");
+        if (!monsterAI.m_targetStatic || !monsterAI) return false;
         Vector3 closestPoint = monsterAI.m_targetStatic.FindClosestPoint(monsterAI.transform.position);
         monsterAI.LookAt(monsterAI.m_targetStatic.GetCenter());
 
@@ -135,21 +128,21 @@ internal class MonsterPathData
                 if (monsterAI.m_aiStatus != null)
                     monsterAI.m_aiStatus = "Attacking piece";
                 monsterAI.DoAttack(null, false);
-                return false;
+                return true;
             }
         }
         else
         {
             monsterAI.MoveTo(dt, closestPoint, 0, true);
-            return false;
+            return true;
         }
 
-        return true;
+        return false;
     }
 
     public void UpdatePath()
     {
-        path = WayPointsSys.LoadPath(spawnArea);
+        path = WayPointsSys.LoadPath(spawnArea).ToList();
         if (currentNodeIndex > path.Count - 1) currentNodeIndex = path.Count - 1;
     }
 }

@@ -18,12 +18,12 @@ namespace TowerDefense
 {
     internal class WayPointsSys
     {
-        internal static List<SpawnArea> AllSpawners = new();
-        internal static List<LineRenderer> AllLineRenderers = new();
+        internal static HashSet<SpawnArea> AllSpawners = new();
+        internal static HashSet<LineRenderer> AllLineRenderers = new();
         internal static Dictionary<MonsterAI, MonsterPathData> MonsterPathDatas = new();
 
         private static SpawnArea currentSpawner;
-        private static List<Vector3> currentPath = new();
+        private static HashSet<Vector3> currentPath = new();
         private static LineRenderer currentLineRenderer;
         private static WandMode mode;
 
@@ -65,52 +65,23 @@ namespace TowerDefense
 
         private static bool SelectSpawner()
         {
-            RefreshAllSpawnersList();
             RefreshAllMonstersDic();
             SaveSpawnerData();
-            if (!FindSpawner(out SpawnArea newSA))
-            {
-                m_localPlayer.Message(MessageHud.MessageType.TopLeft, "Spawner deselected");
-                currentSpawner = null;
-                currentLineRenderer = null;
-                currentPath = new();
-                return false;
-            }
-
+            if (!FindSpawner(out SpawnArea newSA)) return false;
 
             LoadPathToCurrent(newSA);
             CreateLineRenderer(newSA, currentPath);
             Heightlight(newSA.gameObject);
             if (!AllSpawners.Contains(newSA)) AllSpawners.Add(currentSpawner);
 
-            /*if (newSA == currentSpawner)
-            {
-                if (currentLineRenderer.enabled)
-                {
-                    m_localPlayer.Message(MessageHud.MessageType.TopLeft, "Line visul loacaly deactivated");
-                    currentLineRenderer.enabled = false;
-                    currentSpawner.m_nview.GetZDO().Set("enabledLineRenderer", false);
-                }
-                else
-                {
-                    m_localPlayer.Message(MessageHud.MessageType.TopLeft, "Line visul loacaly activated");
-                    currentLineRenderer.enabled = true;
-                    currentSpawner.m_nview.GetZDO().Set("enabledLineRenderer", true);
-                }
-
-                return false;
-            }*/
-
             currentSpawner = newSA;
-            //currentLineRenderer.enabled = true;
 
             return true;
         }
 
         private static bool CreateWayPoint()
         {
-            if (!currentSpawner) return false;
-            if (!currentLineRenderer) return false;
+            if (!currentSpawner || !currentLineRenderer) return false;
             if (currentPath == null)
             {
                 currentPath = new();
@@ -122,7 +93,7 @@ namespace TowerDefense
                 if (currentPath.Contains(point)) return false;
                 if (currentPath.Count >= 1)
                 {
-                    float dist = Vector3.Distance(currentPath[currentPath.Count - 1], point);
+                    float dist = Vector3.Distance(currentPath.Last(), point);
                     if (dist < minDistanceBetweenPoints)
                     {
                         m_localPlayer?.Message(MessageHud.MessageType.TopLeft, "The previous point is too close");
@@ -139,23 +110,7 @@ namespace TowerDefense
             SaveSpawnerData();
             return true;
         }
-
-        private static bool TargetDestroyObj()
-        {
-            if (!currentSpawner) return false;
-            if (currentPath == null)
-            {
-                currentPath = new();
-                return false;
-            }
-
-            Piece hoveringPiece = m_localPlayer.GetHoveringPiece();
-
-            SaveSpawnerData();
-
-            return true;
-        }
-
+        
         internal static bool RemoveLastWayPoint()
         {
             Debug("RemoveLastWayPoint");
@@ -165,13 +120,13 @@ namespace TowerDefense
             if (currentLineRenderer.positionCount <= 1 || currentPath.Count <= 0) return false;
 
             currentLineRenderer.positionCount--;
-            currentPath.RemoveAt(currentPath.Count - 1);
+            currentPath.Remove(currentPath.Last());
             SaveSpawnerData();
 
             return true;
         }
 
-        internal static List<Vector3> GetSpawnerPath(SpawnArea spawnArea)
+        internal static HashSet<Vector3> GetSpawnerPath(SpawnArea spawnArea)
         {
             if (spawnArea == null) throw new ArgumentException("spawnArea = null");
 
@@ -180,8 +135,11 @@ namespace TowerDefense
 
         internal static SpawnArea GetSpawnerOnPosition(Vector3 point)
         {
+            RefreshAllSpawnersList();
+            if(AllSpawners.Count == 0) return null;
             foreach (SpawnArea item in AllSpawners)
             {
+                if(item == null) continue;
                 if (Mathf.Approximately((int)item.transform.position.x, (int)point.x) &&
                     Mathf.Approximately((int)item.transform.position.z, (int)point.z)) return item;
             }
@@ -198,7 +156,6 @@ namespace TowerDefense
         {
             if (!(__instance && __instance.m_character && __instance is MonsterAI monsterAI)) return;
             if (MonsterPathDatas.ContainsKey(monsterAI)) return;
-            RefreshAllSpawnersList();
             SpawnArea spawnArea = GetSpawnerOnPosition(monsterAI.m_patrolPoint);
             if (spawnArea == null) return;
 
@@ -213,8 +170,8 @@ namespace TowerDefense
         private static bool SaveSpawnerData()
         {
             if (currentPath == null || currentSpawner == null) return false;
-            List<CustomVector3> customVectorsToSave = new();
-            currentPath.ForEach(x => customVectorsToSave.Add(x.ToCustomVector3()));
+            HashSet<CustomVector3> customVectorsToSave = new();
+            currentPath.ToList().ForEach(x => customVectorsToSave.Add(x.ToCustomVector3()));
             ISerializer serializer = new SerializerBuilder()
                 .WithNamingConvention(CamelCaseNamingConvention.Instance)
                 .Build();
@@ -232,6 +189,7 @@ namespace TowerDefense
             }
 
             SyncPathsWithOtherPlayers();
+            
 
             return true;
         }
@@ -241,12 +199,10 @@ namespace TowerDefense
 
         internal static void RPC_SyncPathsWithOtherPlayers(long _)
         {
-            RefreshAllSpawnersList();
-            //FillAllSpawnersList();
-
+            RefreshAllLists();
             foreach (SpawnArea spawner in AllSpawners)
             {
-                List<Vector3> loadPath = LoadPath(spawner);
+                HashSet<Vector3> loadPath = LoadPath(spawner);
                 CreateLineRenderer(spawner, loadPath);
                 Chat.instance.SetNpcText(spawner.gameObject, Vector3.up * 1.5f, 20f, 2.5f, "", "Loaded", false);
             }
@@ -269,7 +225,7 @@ namespace TowerDefense
 
             m_localPlayer.Message(MessageHud.MessageType.TopLeft, $"A spawner of {names} has been found");
             spawnArea.m_spawnRadius = 0;
-            //spawnArea.GetComponentsInChildren<Collider>().ToList().ForEach(x => x.enabled = false);
+            //spawnArea.GetComponentsInChildren<Collider>().ToHashSet().ForEach(x => x.enabled = false);
             spawnArea.m_setPatrolSpawnPoint = true;
 
             spawner = spawnArea;
@@ -283,9 +239,9 @@ namespace TowerDefense
             return true;
         }
 
-        internal static List<Vector3> LoadPath(SpawnArea spawner)
+        internal static HashSet<Vector3> LoadPath(SpawnArea spawner)
         {
-            List<Vector3> Rvector3s = new();
+            HashSet<Vector3> Rvector3s = new();
             if (spawner == null || spawner.m_nview == null || !spawner.m_nview.IsValid()) return Rvector3s;
             string json = spawner.m_nview.GetZDO().GetString(CONST.ZDO_PATH);
             if (string.IsNullOrEmpty(json)) return Rvector3s;
@@ -293,10 +249,10 @@ namespace TowerDefense
                 .WithNamingConvention(UnderscoredNamingConvention.Instance)
                 .Build();
 
-            List<CustomVector3> vector3s = deserializer.Deserialize<List<CustomVector3>>(json);
+            HashSet<CustomVector3> vector3s = deserializer.Deserialize<HashSet<CustomVector3>>(json);
             if (vector3s == null) return Rvector3s;
 
-            for (int i = 0; i < vector3s.Count; i++) Rvector3s.Add(vector3s[i].ToVector3());
+            for (int i = 0; i < vector3s.Count; i++) Rvector3s.Add(vector3s.ToList()[i].ToVector3());
 
             return Rvector3s;
         }
@@ -326,7 +282,7 @@ namespace TowerDefense
             spawner.m_nview.GetZDO().Set(ZDO_COLOR, yaml);
         }
 
-        internal static void CreateLineRenderer(SpawnArea spawner, List<Vector3> path = null)
+        internal static void CreateLineRenderer(SpawnArea spawner, HashSet<Vector3> path = null)
         {
             LineRenderer lineRenderer = spawner.GetComponentInChildren<LineRenderer>();
             Vector3 position = new(spawner.transform.position.x, spawner.transform.position.y + upModifier,
@@ -354,56 +310,19 @@ namespace TowerDefense
 
             currentLineRenderer = lineRenderer;
             lineRenderer.SetPosition(0, position);
+            var pathList = path.ToList();
             if (path != null && path.Count != 0)
             {
                 lineRenderer.positionCount = path.Count + 1;
                 for (int i = 1; i < lineRenderer.positionCount - 1; i++)
                 {
-                    lineRenderer.SetPosition(i, path[i - 1]);
+                    lineRenderer.SetPosition(i, pathList[i - 1]);
                 }
 
-                lineRenderer.SetPosition(lineRenderer.positionCount - 1, path[path.Count - 1]);
+                lineRenderer.SetPosition(lineRenderer.positionCount - 1, pathList[path.Count - 1]);
             }
 
             if (!AllLineRenderers.Contains(lineRenderer)) AllLineRenderers.Add(lineRenderer);
-        }
-
-        internal static void RefreshAllSpawnersList()
-        {
-            List<SpawnArea> returnList = new();
-            AllSpawners.ForEach(x =>
-            {
-                if (x != null && !returnList.Contains(x)) returnList.Add(x);
-            });
-            AllSpawners = returnList;
-
-            RefreshAllLineRenderersList();
-        }
-
-        internal static void RefreshAllLineRenderersList()
-        {
-            List<LineRenderer> returnList = new();
-            AllLineRenderers.ForEach(x =>
-            {
-                if (x != null && !returnList.Contains(x)) returnList.Add(x);
-            });
-            AllLineRenderers = returnList;
-        }
-
-
-        private static void FillAllSpawnersList()
-        {
-            if (SceneManager.GetActiveScene().name != "main") return;
-            Task.Run((() =>
-            {
-                var spawnAreas = Object.FindObjectsOfType<SpawnArea>().ToList();
-                spawnAreas.ForEach(x =>
-                {
-                    if (x.m_nview.GetZDO().GetString(CONST.ZDO_PATH, "") != "" && !AllSpawners.Contains(x))
-                        AllSpawners.Add(x);
-                });
-            }));
-            Task.WaitAll();
         }
 
         internal static void RefreshAllMonstersDic()
@@ -415,12 +334,6 @@ namespace TowerDefense
             }
 
             MonsterPathDatas = returnD;
-        }
-
-        private static void ResetSpawnerData(SpawnArea spawner1 = null)
-        {
-            if (spawner1 == null) spawner1 = currentSpawner;
-            spawner1.m_nview.GetZDO().m_strings.Remove(CONST.ZDO_PATH.GetHashCode());
         }
 
         private static bool PieceRayTest(out Vector3 point, out Vector3 normal)
@@ -503,7 +416,6 @@ namespace TowerDefense
                         var loadColor = LoadColor(line.GetComponentInParent<SpawnArea>());
                         line.startColor = loadColor;
                         line.endColor = loadColor;
-                        //if(!x.m_nview.GetZDO().GetBool("enabledLineRenderer", true)) return;
                         switch (lineShowMode)
                         {
                             case LineShowMode.Admin:
@@ -538,6 +450,32 @@ namespace TowerDefense
 
 
             Task.WaitAll();
+        }
+        
+        internal static void RefreshAllLists()
+        {
+            RefreshAllSpawnersList();
+            RefreshAllLineRenderersList();
+        }
+        internal static void RefreshAllSpawnersList()
+        {
+            HashSet<SpawnArea> returnList = new();
+            foreach (var spawner in AllSpawners)
+            {
+                if (spawner != null && !returnList.Contains(spawner)) returnList.Add(spawner);
+            }
+            AllSpawners = returnList;
+        }
+        
+        internal static void RefreshAllLineRenderersList()
+        {
+            HashSet<LineRenderer> returnList = new();
+            
+            foreach (var line in AllLineRenderers)
+            {
+                if (line != null && !returnList.Contains(line)) returnList.Add(line);
+            }
+            AllLineRenderers = returnList;
         }
     }
 }

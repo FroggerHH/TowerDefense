@@ -70,13 +70,25 @@ namespace TowerDefense
         {
             if (!__instance || !__instance.m_character) return true;
 
+            WayPointsSys.RefreshAllMonstersDic();
             if (WayPointsSys.MonsterPathDatas.ContainsKey(__instance))
             {
-                WayPointsSys.RefreshAllMonstersDic();
-                return WayPointsSys.MoveMonsterAlongPath(__instance, dt);
+                bool res = WayPointsSys.MoveMonsterAlongPath(__instance, dt);
+                Debug(
+                    $"MonsterAIUpdateAI result is {res}, {(res == true ? "skiping original methog" : "continue running original methog")}");
+                return !res;
             }
-            
+
             return true;
+        }
+
+        [HarmonyPatch(typeof(MonsterAI), nameof(MonsterAI.MoveTo)), HarmonyPrefix]
+        internal static void MonsterAIMoveTo(MonsterAI __instance, ref bool run)
+        {
+            if (!__instance || !__instance.m_character) return;
+
+            WayPointsSys.RefreshAllMonstersDic();
+            if (WayPointsSys.MonsterPathDatas.ContainsKey(__instance)) run = true;
         }
 
         [HarmonyPatch(typeof(Character), nameof(Character.OnDeath)), HarmonyPrefix]
@@ -85,7 +97,7 @@ namespace TowerDefense
             if (!__instance || !__instance.m_baseAI ||
                 __instance.m_baseAI is not MonsterAI monsterAI) return;
 
-            if(!WayPointsSys.IsPathMonster(monsterAI, out MonsterPathData _) || !noLoot) return; 
+            if (!WayPointsSys.IsPathMonster(monsterAI, out MonsterPathData _) || !noLoot) return;
             __instance.GetComponent<CharacterDrop>().m_drops.ForEach(x => x.m_prefab = null);
         }
 
@@ -154,9 +166,8 @@ namespace TowerDefense
         [HarmonyPatch(typeof(SpawnArea), nameof(SpawnArea.Awake)), HarmonyPostfix]
         private static void SpawnAreaAwake(SpawnArea __instance)
         {
-            WayPointsSys.RefreshAllSpawnersList();
             if (!WayPointsSys.AllSpawners.Contains(__instance)) WayPointsSys.AllSpawners.Add(__instance);
-            List<Vector3> vector3s = WayPointsSys.LoadPath(__instance);
+            HashSet<Vector3> vector3s = WayPointsSys.LoadPath(__instance);
             if (vector3s != null && vector3s.Count > 0)
             {
                 WayPointsSys.CreateLineRenderer(__instance, vector3s);
@@ -186,7 +197,8 @@ namespace TowerDefense
                 __result = true;
                 return;
             }
-            if(__instance.gameObject.GetComponent<Door>()) __result = true;
+
+            if (__instance.gameObject.GetComponent<Door>()) __result = true;
         }
     }
 }

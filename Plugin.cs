@@ -17,7 +17,7 @@ namespace TowerDefense
     {
         #region values
 
-        internal const string ModName = "TowerDefense", ModVersion = "1.0.3", ModGUID = "com.Frogger." + ModName;
+        internal const string ModName = "TowerDefense", ModVersion = "1.0.4", ModGUID = "com.Frogger." + ModName;
         private static readonly Harmony harmony = new(ModGUID);
         public static Plugin _self;
         internal BuildPiece piece;
@@ -93,7 +93,7 @@ namespace TowerDefense
             Config.SaveOnConfigSet = false;
 
             _ = configSync.AddLockingConfigEntry(config("General", "Lock Configuration", true, ""));
-            
+
             lineShowModeConfig = config("General", "Line Show Mode", LineShowMode.Admin_WhenWandInHands,
                 "0-EveryOne\n1-Admin\n2-Nobody\n3-Admin_WhenWandInHands\n4-EveryOne_WhenWandInHands");
             //lineColorConfig = config("General", "Line Color", Color.green, "");
@@ -149,29 +149,24 @@ namespace TowerDefense
 
         #region tools
 
-        public static void Debug(string msg)
+        public static void Debug(object msg)
         {
-            _self.DebugPrivate(msg);
+            _self.Logger.LogInfo(msg);
         }
 
-        private void DebugPrivate(string msg)
+        public static void DebugError(object msg)
         {
-            Logger.LogInfo(msg);
+            _self.Logger.LogError($"{msg} Write to the developer and moderator if this happens often.");
         }
 
-        public void DebugError(string msg)
-        {
-            Logger.LogError($"{msg} Write to the developer and moderator if this happens often.");
-        }
-
-        public static Piece Nearest(GameObject to, List<Piece> list)
+        public static Piece Nearest(Vector3 to, List<Piece> list)
         {
             Piece current = null;
             float oldDistance = 9999;
             foreach (Piece o in list)
             {
                 if (!o) continue;
-                float dist = Vector3.Distance(to.transform.position, o.transform.position);
+                float dist = Vector3.Distance(to, o.transform.position);
                 if (dist < oldDistance && dist <= 40)
                 {
                     current = o;

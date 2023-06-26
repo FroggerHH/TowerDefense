@@ -3,9 +3,6 @@
     <Target Name="ILRepacker" AfterTargets="Build">
         <ItemGroup>
             <InputAssemblies Include="$(TargetPath)"/>
-            <InputAssemblies Include="D:\Slava\Coding\Utils\ServerSync.dll"/>
-            <InputAssemblies Include="D:\Slava\Coding\Utils\PieceManager.dll"/>
-            <InputAssemblies Include="D:\Slava\Coding\Utils\ItemManager.dll"/>
 			<InputAssemblies Include="$(OutputPath)YamlDotNet.dll"/>
         </ItemGroup>
         <ILRepack Parallel="true" DebugInfo="true" Internalize="true" InputAssemblies="@(InputAssemblies)"
