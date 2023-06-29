@@ -77,13 +77,10 @@ internal class MonsterPathData
         var onPathEnd = OnPathEnd();
         if (onPathEnd is false)
         {
-            Debug("onPathEnd false");
             var moveTo = monsterAI.MoveTo(dt, node, 1f, true);
-            Debug($"moveTo result is {moveTo}");
             if (moveTo)
             {
                 monsterAI.m_targetStatic = monsterAI.FindClosestStaticPriorityTarget();
-                Debug("Finding closest target");
 
                 if (monsterAI.m_targetStatic) return AttackTargetPiece(dt); 
                 return true;
@@ -114,7 +111,6 @@ internal class MonsterPathData
 
     private bool AttackTargetPiece(float dt)
     {
-        Debug("AttackTargetPiece");
         if (!monsterAI.m_targetStatic || !monsterAI) return false;
         Vector3 closestPoint = monsterAI.m_targetStatic.FindClosestPoint(monsterAI.transform.position);
         monsterAI.LookAt(monsterAI.m_targetStatic.GetCenter());

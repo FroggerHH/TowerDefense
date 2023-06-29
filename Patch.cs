@@ -14,6 +14,15 @@ namespace TowerDefense
     [HarmonyPatch]
     internal class Patch
     {
+        [HarmonyPatch(typeof(BaseAI), nameof(BaseAI.MoveTo)), HarmonyPrefix]
+        internal static void MonsterAIMoveTo(BaseAI __instance, float dt, Vector3 point, float dist, ref bool run)
+        {
+            if (!__instance || !__instance.m_character || __instance is not MonsterAI { } monsterAI) return;
+
+            WayPointsSys.RefreshAllMonstersDic();
+            if (WayPointsSys.MonsterPathDatas.ContainsKey(monsterAI)) run = true;
+        }
+
         [HarmonyPatch(typeof(BaseAI), nameof(BaseAI.SetPatrolPoint), new Type[0]), HarmonyPostfix]
         internal static void MonsterAISetPatrolPoint(BaseAI __instance)
         {
@@ -74,21 +83,10 @@ namespace TowerDefense
             if (WayPointsSys.MonsterPathDatas.ContainsKey(__instance))
             {
                 bool res = WayPointsSys.MoveMonsterAlongPath(__instance, dt);
-                Debug(
-                    $"MonsterAIUpdateAI result is {res}, {(res == true ? "skiping original methog" : "continue running original methog")}");
                 return !res;
             }
 
             return true;
-        }
-
-        [HarmonyPatch(typeof(MonsterAI), nameof(MonsterAI.MoveTo)), HarmonyPrefix]
-        internal static void MonsterAIMoveTo(MonsterAI __instance, ref bool run)
-        {
-            if (!__instance || !__instance.m_character) return;
-
-            WayPointsSys.RefreshAllMonstersDic();
-            if (WayPointsSys.MonsterPathDatas.ContainsKey(__instance)) run = true;
         }
 
         [HarmonyPatch(typeof(Character), nameof(Character.OnDeath)), HarmonyPrefix]
